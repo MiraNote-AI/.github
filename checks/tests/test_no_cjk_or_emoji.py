@@ -3,7 +3,7 @@ import pathlib
 import subprocess
 import tempfile
 import unittest
-from checks.no_cjk_or_emoji import scan_text, validate, FORBIDDEN_RANGES
+from checks.no_cjk_or_emoji import scan_text, validate, main, FORBIDDEN_RANGES
 
 
 class TestScanText(unittest.TestCase):
@@ -110,6 +110,11 @@ class TestValidate(unittest.TestCase):
         # Only src.py should be flagged, not docs/plans/x.md
         self.assertTrue(any("src.py" in e for e in errors))
         self.assertFalse(any("docs/plans/x.md" in e for e in errors))
+
+    def test_main_returns_2_when_not_a_git_repo(self):
+        non_git = pathlib.Path(tempfile.mkdtemp())  # not a git repo
+        rc = main([str(non_git)])
+        self.assertEqual(rc, 2)
 
 
 if __name__ == "__main__":

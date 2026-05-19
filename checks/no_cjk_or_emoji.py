@@ -105,11 +105,30 @@ def validate(repo_root: pathlib.Path) -> List[str]:
 
 
 def main(argv=None) -> int:
-    parser = argparse.ArgumentParser(description="Scan for CJK / emoji in committed files (beta).")
+    """Scan repo for CJK / emoji in committed files.
+
+    Returns:
+        0: no violations found
+        1: violations found (errors printed to stderr)
+        2: infrastructure error (git repo not found, git missing, or path doesn't exist)
+    """
+    parser = argparse.ArgumentParser(description="Scan for CJK / emoji in committed files (β).")
     parser.add_argument("repo", help="repo root to scan")
     args = parser.parse_args(argv)
 
-    errors = validate(pathlib.Path(args.repo))
+    try:
+        errors = validate(pathlib.Path(args.repo))
+    except subprocess.CalledProcessError as e:
+        print(
+            f"error: git ls-files failed in {args.repo!r} "
+            f"(exit {e.returncode}). Is this a git repository?",
+            file=sys.stderr,
+        )
+        return 2
+    except FileNotFoundError as e:
+        # git binary not installed, or repo path doesn't exist
+        print(f"error: {e}", file=sys.stderr)
+        return 2
     for e in errors:
         print(e, file=sys.stderr)
     return 0 if not errors else 1

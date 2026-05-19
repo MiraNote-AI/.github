@@ -1,26 +1,24 @@
 # MiraNote AI Engineering Docs
 
-Canonical rules and playbooks for AI-assisted development across `MiraNote-AI/*` repos.
+Canonical engineering rules and supporting docs for AI-assisted development
+across MiraNote-AI repos. Source of truth: `MiraNote-AI/.github`.
 
-> **Source of truth:** `MiraNote-AI/.github`.
-> All other repos receive these files via the `sync-ai-docs.yml` workflow.
+## Layout
 
-## Status
+| File | Purpose |
+|---|---|
+| [`../../CLAUDE.md`](../../CLAUDE.md) | Entry point for Claude Code in every repo. |
+| [`../../CONTRIBUTING.md`](../../CONTRIBUTING.md) | The 7 enforced rules with rationale. |
+| [`skills.md`](skills.md) | Registry of adopted Claude skills and MCP servers (Rule 5). |
+| [`../specs/`](../specs/) | Design specs for harness sub-projects. |
+| [`../plans/`](../plans/) | Implementation plans for harness sub-projects. |
 
-Scaffolding only — the actual rule content is **TBD** pending a brainstorm session.
-Treat the planned structure below as a strawman; expect changes.
+## Future docs (added when needed, per Ratchet)
 
-## Planned structure
+- `architecture.md` -- when MiraNote's 5-repo topology stabilises.
+- `workflow.md` -- branching, commit, and PR conventions beyond Rule 6.
+- `playbooks/` -- recipes for common AI-driven tasks.
+- `decisions/` -- ADRs.
 
-- `product.md` — what MiraNote is, who uses it, what we're optimizing for
-- `architecture.md` — how the 5 repos fit together, request flow, data flow
-- `coding-standards.md` — naming, structure, comments, tests
-- `workflow.md` — branches, commits, PR conventions
-- `playbooks/` — step-by-step task recipes (add feature, fix bug, refactor)
-- `decisions/` — ADRs (architecture decision records)
-
-## How to edit
-
-1. PR into `MiraNote-AI/.github` (this repo)
-2. On merge to `main`, the sync workflow opens a PR in each of the 4 code repos
-3. Reviewers in each code repo merge their auto-PR
+These do not exist yet. Add them only when a real need (or failure)
+demands them -- keeping with the Ratchet principle.

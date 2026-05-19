@@ -66,7 +66,7 @@ This spec defines the **day-0 infrastructure** that makes the meta-rule self-enf
 │   └── target-workflow.yml                # synced to each target's .github/workflows/checks.yml
 ├── bin/
 │   └── sync-ai-docs.sh                    # exists, will expand sync scope
-└── pyproject.toml                         # provides `python -m checks.*` import root
+└── (no pyproject.toml needed — stdlib-only checks run via `python -m checks.X` with the `__init__.py` files alone)
 ```
 
 ### 3.2 Directory layout — each target repo
@@ -149,7 +149,7 @@ Runs only after γ passes. Only meaningful in `mode=source` (the only place `che
 
 1. Parse CONTRIBUTING.md into a `{rule_id: [check_paths]}` mapping.
 2. **Forward check**: every referenced `check_path` exists.
-3. **Reverse / orphan check**: every Python file under `checks/` (excluding `_meta/` and `__init__.py`) appears in at least one rule's `Enforced by:` line.
+3. **Reverse / orphan check**: every `.py` file at the **direct top level** of `checks/` (i.e., `glob('checks/*.py')`, excluding `__init__.py`) must appear in at least one rule's `Enforced by:` line. Subdirectories under `checks/` (such as `_meta/`) are not scanned for orphans — they are reserved for meta-tooling and shared utilities. The α script itself lives at `checks/_meta/all_rules_have_checks.py` and is required to be referenced by Rule 1's `Enforced by:` line; this is enforced by the **forward** check, not the orphan check.
 
 ### 4.4 Adding a new rule (standard 4-step procedure)
 
@@ -190,11 +190,14 @@ Spec: §4.2. The structural validation is split: full validation (including path
 
 **Scope**: All files returned by `git ls-files --cached --others --exclude-standard`. DASGPT's earlier version omitted `--others`; locally-staged-but-not-committed files slipped through and CI caught them after push. We use the inclusive form so local matches CI.
 
-**Detection**: a code point triggers a violation if it is:
-- In any of the Unicode blocks `Hiragana` (U+3040..U+309F), `Katakana` (U+30A0..U+30FF), `CJK Unified Ideographs` (U+4E00..U+9FFF), `CJK Symbols and Punctuation` (U+3000..U+303F), `Halfwidth and Fullwidth Forms` (U+FF00..U+FFEF), OR
-- Has the Unicode property `Emoji_Presentation=Yes` (resolved via `unicodedata` + an embedded data table generated from the Python `unicodedata` module at script bundle time).
+**Detection** (hardcoded Unicode ranges, stdlib-only — Python's `unicodedata` does not expose the Emoji property and `re` does not support `\p{Emoji_Presentation}`):
 
-Decoding: files are read as UTF-8 with `errors="replace"`; replacement characters are themselves a violation (signals non-UTF-8 file content that should not be committed as text).
+- **CJK / fullwidth blocks**: `Hiragana` (U+3040..U+309F), `Katakana` (U+30A0..U+30FF), `CJK Unified Ideographs` (U+4E00..U+9FFF), `CJK Unified Ideographs Extension A` (U+3400..U+4DBF), `CJK Symbols and Punctuation` (U+3000..U+303F), `Halfwidth and Fullwidth Forms` (U+FF00..U+FFEF).
+- **Emoji blocks**: `Emoticons` (U+1F600..U+1F64F), `Misc Symbols and Pictographs` (U+1F300..U+1F5FF), `Transport and Map Symbols` (U+1F680..U+1F6FF), `Supplemental Symbols and Pictographs` (U+1F900..U+1F9FF), `Symbols and Pictographs Extended-A` (U+1FA70..U+1FAFF), `Regional Indicator Symbols` (U+1F1E6..U+1F1FF).
+
+Text-presentation symbols (e.g., `✓` U+2713, `→` U+2192, box-drawing) are **not** flagged — they default to text presentation per the Unicode UCD and have legitimate use in tables and diagrams. If a future failure shows we need to flag those too, ratchet up the ranges then.
+
+**Decoding**: files are read as UTF-8 with `errors="replace"`; replacement characters themselves are a violation (signals non-UTF-8 file content that should not be committed as text).
 
 **Allowlist**: An in-script `ALLOWLIST_PATTERNS` glob list (initially empty). Allowlist lives in code, not config, because moving it to a doc would itself need a check (infinite regress).
 
@@ -254,7 +257,15 @@ jobs:
         uses: actions/checkout@v4
         with: { path: code, fetch-depth: 0 }   # β needs git ls-files; η needs PR diff
 
-      - name: Checkout tools (.github @main)
+      # In source mode, we are checking .github against itself — the check
+      # scripts ARE the code under test, so reuse the same checkout. In target
+      # mode, fetch the centrally-maintained checks from .github main.
+      - name: Symlink tools = code (source mode)
+        if: ${{ inputs.mode == 'source' }}
+        run: ln -s "$GITHUB_WORKSPACE/code" "$GITHUB_WORKSPACE/tools"
+
+      - name: Checkout tools from .github main (target mode)
+        if: ${{ inputs.mode == 'target' }}
         uses: actions/checkout@v4
         with:
           repository: MiraNote-AI/.github
@@ -481,7 +492,6 @@ New files in `MiraNote-AI/.github`:
 - [ ] `.github/workflows/checks.yml` (reusable)
 - [ ] `.github/workflows/self-check.yml`
 - [ ] `templates/target-workflow.yml`
-- [ ] `pyproject.toml`
 
 Modified files in `MiraNote-AI/.github`:
 - [ ] `CLAUDE.md` (replace placeholder with real day-0 rules entry; must satisfy δ ≤ 80 lines)

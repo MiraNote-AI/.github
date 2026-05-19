@@ -10,7 +10,7 @@ from __future__ import annotations
 import argparse
 import pathlib
 import sys
-from typing import List
+from typing import List, Set
 
 from checks._meta.parser import parse_contributing
 
@@ -39,8 +39,14 @@ def validate(repo_root: pathlib.Path) -> List[str]:
         prefix = f"CONTRIBUTING.md:{pe.line}: " if pe.line else "CONTRIBUTING.md: "
         errors.append(prefix + pe.message)
 
+    # If parse errors exist the doc structure is broken; α cannot reliably
+    # determine what is registered, so the orphan check would produce false
+    # positives. Skip it and let the user fix parse errors first.
+    if parse_errors:
+        return errors
+
     # Forward: every referenced check path must exist
-    referenced: set = set()
+    referenced: Set[str] = set()
     for rule in rules:
         for path in rule.enforced_by:
             referenced.add(path)

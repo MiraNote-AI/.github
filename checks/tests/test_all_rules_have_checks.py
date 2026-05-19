@@ -62,12 +62,31 @@ class TestAllRulesHaveChecks(unittest.TestCase):
         errors = validate(self.tmp)
         self.assertEqual(errors, [])
 
-    def test_skips_when_parse_errors_exist(self):
+    def test_parse_error_from_missing_rules_section_is_reported(self):
         _write(self.tmp / "CONTRIBUTING.md", "no rules here")
         _write(self.tmp / "checks" / "__init__.py")
         errors = validate(self.tmp)
         # γ would catch the parse error; α reports it surfaced from parser
         self.assertTrue(errors)
+
+    def test_no_false_orphan_when_partial_rule_present(self):
+        # Rule has a valid `Enforced by:` line but is MISSING `**Rationale:**`.
+        # The parser should emit a parse error; α must NOT also flag foo.py as
+        # an orphan — that would be a confusing second error for one root cause.
+        _write(self.tmp / "CONTRIBUTING.md", (
+            "## Rules\n\n"
+            "### Rule 1: Foo\n\np\n\n"
+            # Rationale intentionally omitted
+            "**Enforced by:** `checks/foo.py`\n"
+        ))
+        _write(self.tmp / "checks" / "__init__.py")
+        _write(self.tmp / "checks" / "foo.py")
+        errors = validate(self.tmp)
+        # There must be at least one parse error (missing Rationale)
+        self.assertTrue(errors, "expected at least one parse error")
+        # But none of them should mention an orphan for checks/foo.py
+        orphan_msgs = [e for e in errors if "checks/foo.py" in e and "not referenced" in e]
+        self.assertEqual(orphan_msgs, [], f"false orphan error(s) found: {orphan_msgs}")
 
     def test_main_returns_zero_on_pass(self):
         _make_valid_repo(self.tmp)

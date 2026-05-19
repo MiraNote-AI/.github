@@ -41,7 +41,13 @@ FORBIDDEN_RANGES: List[Tuple[int, int, str]] = [
 ]
 
 # Filenames or globs to skip even if they would otherwise be scanned.
-ALLOWLIST_PATTERNS: List[str] = []
+ALLOWLIST_PATTERNS: List[str] = [
+    # Planning artifacts that legitimately discuss forbidden characters
+    # (e.g., showing example test fixtures). User-facing docs/ai/ are NOT
+    # allowlisted — they must stay clean.
+    "docs/plans/*.md",
+    "docs/specs/*.md",
+]
 
 
 def _classify(cp: int) -> str:

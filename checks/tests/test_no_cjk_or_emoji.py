@@ -98,6 +98,19 @@ class TestValidate(unittest.TestCase):
         errors = validate(self.tmp)
         self.assertTrue(any("x.bin" in e for e in errors))
 
+    def test_allowlisted_paths_skipped(self):
+        # docs/plans/foo.md is an allowlisted path per ALLOWLIST_PATTERNS;
+        # CJK content there must NOT be flagged.
+        (self.tmp / "docs" / "plans").mkdir(parents=True)
+        (self.tmp / "docs" / "plans" / "x.md").write_text("plan with \u4e2d\n")
+        subprocess.run(["git", "add", "docs/plans/x.md"], cwd=self.tmp, check=True)
+        # Also write a non-allowlisted file with CJK to confirm β still catches that
+        self._write_and_stage("src.py", "x = '\u4e2d'\n")
+        errors = validate(self.tmp)
+        # Only src.py should be flagged, not docs/plans/x.md
+        self.assertTrue(any("src.py" in e for e in errors))
+        self.assertFalse(any("docs/plans/x.md" in e for e in errors))
+
 
 if __name__ == "__main__":
     unittest.main()

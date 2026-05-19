@@ -51,7 +51,8 @@ PR.
 
 ## Out of scope (deferred)
 
-- Branch protection / CODEOWNERS -- sub-project F.
+- CODEOWNERS, required-status-check enforcement -- sub-project F follow-ups.
+  Branch protection itself is live on all 5 repos.
 - Per-stack harness (web/api/ios linters, tests, settings.json hooks) --
   sub-project D.
 - Shared org-level skills and memory -- sub-project E.

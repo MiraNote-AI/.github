@@ -235,6 +235,34 @@ class TestParser(unittest.TestCase):
             f"expected 'empty' in error messages, got: {messages}",
         )
 
+    def test_empty_rationale_value_reports_error(self):
+        """`**Rationale:**` followed by nothing must error (mirror of empty
+        Enforced by treatment, not silently accepted as blank rationale)."""
+        text = (
+            "## Rules\n\n"
+            "### Rule 1: Foo\n\np\n\n"
+            "**Rationale:**\n"
+            "**Enforced by:** `checks/foo.py`\n"
+        )
+        rules, errors = parse_contributing(text)
+        self.assertGreater(len(errors), 0)
+        messages = " ".join(e.message for e in errors)
+        self.assertIn("Rationale", messages)
+        self.assertIn("empty", messages.lower())
+        # Rule must NOT be added because rationale is required.
+        self.assertEqual(rules, [])
+
+    def test_empty_rules_section_reports_error(self):
+        """A `## Rules` heading with no `### Rule N:` underneath is a
+        structural error, not silent success — otherwise alpha emits
+        confusing orphan reports with no gamma context."""
+        text = "## Rules\n\n(no rules yet)\n"
+        rules, errors = parse_contributing(text)
+        self.assertEqual(rules, [])
+        self.assertGreater(len(errors), 0)
+        messages = " ".join(e.message for e in errors)
+        self.assertIn("Rule", messages)
+
 
 if __name__ == "__main__":
     unittest.main()

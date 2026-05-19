@@ -1,0 +1,84 @@
+# .github/workflows/checks.yml -- reusable: called by self-check.yml in this
+# repo and by target stub workflows in the 4 code repos.
+#
+# In source mode, `tools` is symlinked to `code` so the PR's own check scripts
+# validate the PR (not the older copy from main). In target mode, `tools` is
+# checked out from `MiraNote-AI/.github@main`.
+
+name: Checks
+
+on:
+  workflow_call:
+    inputs:
+      mode:
+        type: string
+        default: target  # 'source' for .github self-check
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code under test
+        uses: actions/checkout@v4
+        with:
+          path: code
+          fetch-depth: 0  # beta needs git ls-files; eta needs PR diff range
+
+      - name: Symlink tools = code (source mode)
+        if: ${{ inputs.mode == 'source' }}
+        run: ln -s "$GITHUB_WORKSPACE/code" "$GITHUB_WORKSPACE/tools"
+
+      - name: Checkout tools from .github main (target mode)
+        if: ${{ inputs.mode == 'target' }}
+        uses: actions/checkout@v4
+        with:
+          repository: MiraNote-AI/.github
+          ref: main
+          path: tools
+
+      - name: Setup Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: gamma -- CONTRIBUTING.md format
+        if: ${{ !cancelled() }}
+        working-directory: tools
+        run: python -m checks.contributing_format "$GITHUB_WORKSPACE/code" --mode ${{ inputs.mode }}
+
+      - name: alpha -- Meta-rule
+        if: ${{ !cancelled() && inputs.mode == 'source' }}
+        working-directory: tools
+        run: python -m checks._meta.all_rules_have_checks "$GITHUB_WORKSPACE/code"
+
+      - name: beta -- No CJK/emoji
+        if: ${{ !cancelled() }}
+        working-directory: tools
+        run: python -m checks.no_cjk_or_emoji "$GITHUB_WORKSPACE/code"
+
+      - name: delta -- CLAUDE.md size
+        if: ${{ !cancelled() }}
+        working-directory: tools
+        run: python -m checks.claude_md_size "$GITHUB_WORKSPACE/code" --max 80
+
+      - name: epsilon -- Skills/MCP registry
+        if: ${{ !cancelled() }}
+        working-directory: tools
+        run: python -m checks.skills_registry "$GITHUB_WORKSPACE/code"
+
+      - name: zeta -- PR has reference
+        if: ${{ !cancelled() && github.event_name == 'pull_request' }}
+        working-directory: tools
+        env:
+          PR_BODY: ${{ github.event.pull_request.body }}
+          PR_BRANCH: ${{ github.event.pull_request.head.ref }}
+        run: python -m checks.pr_has_reference
+
+      - name: eta -- Protected paths
+        if: ${{ !cancelled() && inputs.mode == 'target' && github.event_name == 'pull_request' }}
+        working-directory: tools
+        env:
+          PR_BRANCH: ${{ github.event.pull_request.head.ref }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: python -m checks.protected_paths "$GITHUB_WORKSPACE/code"

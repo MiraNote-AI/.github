@@ -13,17 +13,17 @@ class TestScanText(unittest.TestCase):
         self.assertEqual(scan_text("hello world\nplain text\n"), [])
 
     def test_chinese_character_is_flagged(self):
-        violations = scan_text("hello 中 world")  # U+4E2D
+        violations = scan_text("hello \u4e2d world")  # U+4E2D
         self.assertEqual(len(violations), 1)
         self.assertEqual(violations[0][0], 1)  # line 1
         self.assertEqual(violations[0][2], 0x4E2D)
 
     def test_hiragana_is_flagged(self):
-        violations = scan_text("あ")  # U+3042
+        violations = scan_text("\u3042")  # U+3042
         self.assertEqual(len(violations), 1)
 
     def test_katakana_is_flagged(self):
-        violations = scan_text("ア")  # U+30A2
+        violations = scan_text("\u30a2")  # U+30A2
         self.assertEqual(len(violations), 1)
 
     def test_emoji_is_flagged(self):
@@ -32,20 +32,20 @@ class TestScanText(unittest.TestCase):
 
     def test_text_presentation_symbols_NOT_flagged(self):
         # U+2713 (CHECK MARK), U+2192 (RIGHTWARDS ARROW), U+2500 (BOX DRAWINGS)
-        self.assertEqual(scan_text("✓ → ─"), [])
+        self.assertEqual(scan_text("\u2713 \u2192 \u2500"), [])
 
     def test_multiple_violations_on_different_lines(self):
-        violations = scan_text("ok\n中\nあ\n")
+        violations = scan_text("ok\n\u4e2d\n\u3042\n")
         self.assertEqual(len(violations), 2)
         self.assertEqual(violations[0][0], 2)
         self.assertEqual(violations[1][0], 3)
 
     def test_fullwidth_punctuation_flagged(self):
-        violations = scan_text("hi！")  # U+FF01 fullwidth exclamation
+        violations = scan_text("hi\uff01")  # U+FF01 fullwidth exclamation
         self.assertEqual(len(violations), 1)
 
     def test_cjk_extension_a_flagged(self):
-        violations = scan_text("㐀")  # CJK Ext A start
+        violations = scan_text("\u3400")  # CJK Ext A start U+3400
         self.assertEqual(len(violations), 1)
 
 
@@ -71,7 +71,7 @@ class TestValidate(unittest.TestCase):
         self.assertEqual(validate(self.tmp), [])
 
     def test_committed_chinese_fails(self):
-        self._write_and_stage("a.py", "x = '中'\n")
+        self._write_and_stage("a.py", "x = '\u4e2d'\n")
         errors = validate(self.tmp)
         self.assertEqual(len(errors), 1)
         self.assertIn("a.py", errors[0])
@@ -88,7 +88,7 @@ class TestValidate(unittest.TestCase):
         # --exclude-standard means .gitignore is honored
         (self.tmp / ".gitignore").write_text("ignored.txt\n")
         subprocess.run(["git", "add", ".gitignore"], cwd=self.tmp, check=True)
-        self._write_untracked("ignored.txt", "中")
+        self._write_untracked("ignored.txt", "\u4e2d")
         self.assertEqual(validate(self.tmp), [])
 
     def test_binary_files_handled_gracefully(self):

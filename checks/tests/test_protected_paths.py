@@ -38,6 +38,11 @@ class TestPathsIntersecting(unittest.TestCase):
         changes = ["src/x.ts", "CLAUDE.md", "README.md", "docs/ai/skills.md"]
         self.assertEqual(set(paths_intersecting(changes)), {"CLAUDE.md", "docs/ai/skills.md"})
 
+    def test_docs_aix_NOT_treated_as_docs_ai(self):
+        # Ensures the /** prefix-match has correct boundary handling
+        # (must not match a path that merely starts with docs/ai)
+        self.assertEqual(paths_intersecting(["docs/aix/foo.md"]), [])
+
 
 class TestValidate(unittest.TestCase):
     """Integration tests with git."""
@@ -92,6 +97,17 @@ class TestValidate(unittest.TestCase):
         # CI workflow gates eta on `pull_request`; script should be tolerant if called otherwise.
         with patch.dict("os.environ", {}, clear=True):
             self.assertEqual(validate(self.tmp), [])
+
+    def test_main_returns_2_on_bad_sha(self):
+        env = {
+            "BASE_SHA": "0000000000000000000000000000000000000000",
+            "HEAD_SHA": "1111111111111111111111111111111111111111",
+            "PR_BRANCH": "feature/x",
+        }
+        from checks.protected_paths import main
+        with patch.dict("os.environ", env, clear=True):
+            rc = main([str(self.tmp)])
+            self.assertEqual(rc, 2)
 
 
 if __name__ == "__main__":

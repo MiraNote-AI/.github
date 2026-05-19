@@ -6,6 +6,11 @@ PR head branch is a sync-bot branch (`chore/sync-ai-docs-*`).
 
 This is soft enforcement per spec 5.7: branch names are spoofable. True
 enforcement requires CODEOWNERS + branch protection (sub-project F).
+
+Exit codes:
+  0  No violations found (clean).
+  1  One or more protected paths were modified outside the sync flow.
+  2  Infrastructure error (git diff failed or git not found).
 """
 from __future__ import annotations
 import argparse
@@ -20,7 +25,6 @@ from typing import List
 PROTECTED_GLOBS: List[str] = [
     "CLAUDE.md",
     "CONTRIBUTING.md",
-    "docs/ai/*",
     "docs/ai/**",
     ".github/workflows/checks.yml",
 ]
@@ -86,7 +90,18 @@ def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description="Verify protected paths (eta).")
     parser.add_argument("repo")
     args = parser.parse_args(argv)
-    errors = validate(pathlib.Path(args.repo))
+    try:
+        errors = validate(pathlib.Path(args.repo))
+    except subprocess.CalledProcessError as e:
+        print(
+            f"error: git diff failed in {args.repo!r} "
+            f"(exit {e.returncode}). Are BASE_SHA/HEAD_SHA valid?",
+            file=sys.stderr,
+        )
+        return 2
+    except FileNotFoundError as e:
+        print(f"error: {e}", file=sys.stderr)
+        return 2
     for e in errors:
         print(e, file=sys.stderr)
     return 0 if not errors else 1

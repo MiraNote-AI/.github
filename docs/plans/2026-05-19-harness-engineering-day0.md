@@ -8,7 +8,7 @@
 
 **Tech Stack:** Python 3.9+ stdlib only (`unittest`, `re`, `fnmatch`, `subprocess`, `pathlib`, `argparse`, `sys`, `os`, `dataclasses`). GitHub Actions (`actions/checkout@v4`, `actions/setup-python@v5`). bash for `bin/sync-ai-docs.sh`. YAML for workflows.
 
-**Reference:** `docs/superpowers/specs/2026-05-19-harness-engineering-day0-design.md` (commit `f414e90`).
+**Reference:** `docs/specs/2026-05-19-harness-engineering-day0-design.md` (commit `f414e90`).
 
 **Working directory for all commands:** `/Users/mengjia/MiraNote/.github` unless otherwise stated.
 
@@ -26,9 +26,8 @@ After this plan completes, `MiraNote-AI/.github` contains:
 │   ├── ai/
 │   │   ├── README.md                      # MODIFIED: point to docs
 │   │   └── skills.md                      # NEW: Skill/MCP registry
-│   └── superpowers/
-│       ├── specs/                         # already populated
-│       └── plans/                         # this file lives here
+│   ├── specs/                             # design specs (this dir contains the spec)
+│   └── plans/                             # implementation plans (this file lives here)
 ├── checks/
 │   ├── __init__.py                        # NEW: empty
 │   ├── _meta/
@@ -2170,8 +2169,8 @@ across MiraNote-AI repos. Source of truth: `MiraNote-AI/.github`.
 | [`../../CLAUDE.md`](../../CLAUDE.md) | Entry point for Claude Code in every repo. |
 | [`../../CONTRIBUTING.md`](../../CONTRIBUTING.md) | The 7 enforced rules with rationale. |
 | [`skills.md`](skills.md) | Registry of adopted Claude skills and MCP servers (ε). |
-| [`../superpowers/specs/`](../superpowers/) | Design specs for harness sub-projects. |
-| [`../superpowers/plans/`](../superpowers/) | Implementation plans for harness sub-projects. |
+| [`../specs/`](../specs/) | Design specs for harness sub-projects. |
+| [`../plans/`](../plans/) | Implementation plans for harness sub-projects. |
 
 ## Future docs (added when needed, per Ratchet)
 
@@ -2559,7 +2558,7 @@ chore: bootstrap CLAUDE.md sync infrastructure
 
 Run: `find . -type f -not -path './.git/*' | sort`
 
-Expected output (in some order matching §"File structure" above): CLAUDE.md, CONTRIBUTING.md, bin/sync-ai-docs.sh, docs/ai/README.md, docs/ai/skills.md, docs/superpowers/specs/2026-05-19-harness-engineering-day0-design.md, docs/superpowers/plans/2026-05-19-harness-engineering-day0.md, .github/workflows/checks.yml, .github/workflows/self-check.yml, .github/workflows/sync-ai-docs.yml, templates/target-workflow.yml, checks/__init__.py, checks/_meta/__init__.py, checks/_meta/parser.py, checks/_meta/all_rules_have_checks.py, checks/contributing_format.py, checks/no_cjk_or_emoji.py, checks/claude_md_size.py, checks/skills_registry.py, checks/pr_has_reference.py, checks/protected_paths.py, checks/tests/__init__.py, checks/tests/test_parser.py, checks/tests/test_contributing_format.py, checks/tests/test_all_rules_have_checks.py, checks/tests/test_no_cjk_or_emoji.py, checks/tests/test_claude_md_size.py, checks/tests/test_skills_registry.py, checks/tests/test_pr_has_reference.py, checks/tests/test_protected_paths.py.
+Expected output (in some order matching §"File structure" above): CLAUDE.md, CONTRIBUTING.md, bin/sync-ai-docs.sh, docs/ai/README.md, docs/ai/skills.md, docs/specs/2026-05-19-harness-engineering-day0-design.md, docs/plans/2026-05-19-harness-engineering-day0.md, .github/workflows/checks.yml, .github/workflows/self-check.yml, .github/workflows/sync-ai-docs.yml, templates/target-workflow.yml, checks/__init__.py, checks/_meta/__init__.py, checks/_meta/parser.py, checks/_meta/all_rules_have_checks.py, checks/contributing_format.py, checks/no_cjk_or_emoji.py, checks/claude_md_size.py, checks/skills_registry.py, checks/pr_has_reference.py, checks/protected_paths.py, checks/tests/__init__.py, checks/tests/test_parser.py, checks/tests/test_contributing_format.py, checks/tests/test_all_rules_have_checks.py, checks/tests/test_no_cjk_or_emoji.py, checks/tests/test_claude_md_size.py, checks/tests/test_skills_registry.py, checks/tests/test_pr_has_reference.py, checks/tests/test_protected_paths.py.
 
 - [ ] **Step 3: Plan is complete**
 

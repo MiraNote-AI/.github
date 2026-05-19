@@ -443,7 +443,7 @@ echo "" >> README.md
 git commit -am "smoke: verify checks pipeline (refs #0, design: bootstrap)"
 git push -u origin smoke/checks-bootstrap
 gh pr create --title "smoke: verify checks pipeline" \
-  --body "Bootstrap smoke test. refs: #0, design: docs/superpowers/specs/2026-05-19-harness-engineering-day0-design.md"
+  --body "Bootstrap smoke test. refs: #0, design: docs/specs/2026-05-19-harness-engineering-day0-design.md"
 ```
 
 Expected: ζ passes (PR body contains both `#0` and a path-style reference); other applicable target-mode checks run and pass; PR can be closed without merging.

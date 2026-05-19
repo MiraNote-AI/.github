@@ -24,8 +24,11 @@ short="$(git -C "$SOURCE_DIR" rev-parse --short HEAD 2>/dev/null || echo local)"
 mirror_files() {
   local target="$1"
   cp "$SOURCE_DIR/CLAUDE.md" "$target/CLAUDE.md"
+  cp "$SOURCE_DIR/CONTRIBUTING.md" "$target/CONTRIBUTING.md"
   mkdir -p "$target/docs/ai"
   rsync -a --delete "$SOURCE_DIR/docs/ai/" "$target/docs/ai/"
+  mkdir -p "$target/.github/workflows"
+  cp "$SOURCE_DIR/templates/target-workflow.yml" "$target/.github/workflows/checks.yml"
 }
 
 for repo in "${TARGETS[@]}"; do

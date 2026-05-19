@@ -107,6 +107,14 @@ def parse_contributing(text: str) -> Tuple[List[Rule], List[ParseError]]:
     if current_heading is not None:
         chunks.append((current_heading[0], current_heading[1], current_heading[3], current_body))
 
+    if not chunks:
+        errors.append(
+            ParseError(
+                "`## Rules` section contains no `### Rule N:` headings"
+            )
+        )
+        return rules, errors
+
     seen_ids = set()
     for line_no, raw_heading, title, body_lines in chunks:
         m = _RULE_HEADING_RE.match(raw_heading)
@@ -137,6 +145,13 @@ def parse_contributing(text: str) -> Tuple[List[Rule], List[ParseError]]:
             rationale = ""
         else:
             rationale = rationale_matches[0][1]
+            if not rationale:
+                errors.append(
+                    ParseError(
+                        f"Rule {rule_id} has an empty `**Rationale:**` value",
+                        line=line_no,
+                    )
+                )
 
         if len(enforced_matches) != 1:
             errors.append(
@@ -164,9 +179,9 @@ def parse_contributing(text: str) -> Tuple[List[Rule], List[ParseError]]:
                     )
                 )
 
-        # only add the rule if it had a rationale AND a usable enforced_by;
+        # only add the rule if it had a non-empty rationale AND a usable enforced_by;
         # otherwise downstream consumers may misuse the partial record
-        if len(rationale_matches) == 1 and len(enforced_matches) == 1 and enforced_by:
+        if len(rationale_matches) == 1 and rationale and len(enforced_matches) == 1 and enforced_by:
             rules.append(
                 Rule(
                     id=rule_id,

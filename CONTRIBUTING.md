@@ -42,6 +42,10 @@ The alpha check also detects **orphan** check scripts -- every `.py` file at the
 direct top level of `checks/` (excluding `__init__.py`) must be referenced
 by at least one rule's `Enforced by:` line.
 
+When gamma reports parse errors (CONTRIBUTING.md structural problems), alpha
+skips orphan detection to avoid false-positive cascades; fix the parse errors
+first, then rerun alpha to see any remaining orphans.
+
 **Rationale:** Without paired checks, rules degrade to wall-art over time.
 **Enforced by:** `checks/_meta/all_rules_have_checks.py`
 

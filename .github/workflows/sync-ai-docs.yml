@@ -61,9 +61,11 @@ jobs:
           fi
 
           branch="chore/sync-ai-docs-${short}"
-          git checkout -b "$branch"
+          # -B (not -b) + --force-with-lease so duplicate triggers for the
+          # same source SHA (e.g. push + workflow_dispatch) don't collide.
+          git checkout -B "$branch"
           git commit -m "chore: sync AI docs from MiraNote-AI/.github@${short}"
-          git push -u origin "$branch"
+          git push -u --force-with-lease origin "$branch"
 
           gh pr create \
             --base main \

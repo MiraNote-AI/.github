@@ -1,0 +1,24 @@
+# .github/workflows/self-check.yml -- runs the reusable checks workflow
+# against this repo (.github) in source mode on every PR and on every push
+# to main that touches the rule-relevant paths.
+
+name: Self-check
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+    paths:
+      - 'CLAUDE.md'
+      - 'CONTRIBUTING.md'
+      - 'docs/ai/**'
+      - 'checks/**'
+      - 'templates/**'
+      - '.github/workflows/checks.yml'
+      - '.github/workflows/self-check.yml'
+
+jobs:
+  checks:
+    uses: ./.github/workflows/checks.yml
+    with:
+      mode: source

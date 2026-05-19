@@ -5,7 +5,9 @@ on:
     branches: [main]
     paths:
       - 'CLAUDE.md'
+      - 'CONTRIBUTING.md'
       - 'docs/ai/**'
+      - 'templates/**'
       - '.github/workflows/sync-ai-docs.yml'
   workflow_dispatch:
 
@@ -30,12 +32,15 @@ jobs:
           path: target
           fetch-depth: 0
 
-      - name: Mirror CLAUDE.md and docs/ai/
+      - name: Mirror docs and target stub
         run: |
           set -euo pipefail
           cp source/CLAUDE.md target/CLAUDE.md
+          cp source/CONTRIBUTING.md target/CONTRIBUTING.md
           mkdir -p target/docs/ai
           rsync -a --delete source/docs/ai/ target/docs/ai/
+          mkdir -p target/.github/workflows
+          cp source/templates/target-workflow.yml target/.github/workflows/checks.yml
 
       - name: Open PR (skip if no diff)
         working-directory: target

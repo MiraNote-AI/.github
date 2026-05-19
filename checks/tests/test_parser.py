@@ -113,6 +113,34 @@ p
 """
 
 
+# Single empty backtick-pair: **Enforced by:** ``
+# After stripping, the sole token is "" → treated as empty value → error.
+EMPTY_BACKTICK_PAIR = """\
+## Rules
+
+### Rule 1: Foo
+
+p
+
+**Rationale:** r
+**Enforced by:** ``
+"""
+
+
+# Sparse comma: **Enforced by:** `a.py`, , `b.py`
+# The empty middle slot must be detected, not silently kept as "".
+SPARSE_COMMA_ENFORCED_BY = """\
+## Rules
+
+### Rule 1: Foo
+
+p
+
+**Rationale:** r
+**Enforced by:** `checks/a.py`, , `checks/b.py`
+"""
+
+
 class TestParser(unittest.TestCase):
 
     def test_valid_minimal_returns_one_rule(self):
@@ -175,6 +203,37 @@ class TestParser(unittest.TestCase):
         rules, errors = parse_contributing(text)
         self.assertEqual(errors, [])
         self.assertEqual(rules[0].enforced_by, ["checks/a.py", "checks/b.py"])
+
+    def test_empty_backtick_pair_reports_error(self):
+        """A lone `` `` `` collapses to "" after stripping; must be treated as
+        an empty value (same as a bare `**Enforced by:**` line), not silently
+        accepted as a blank path token."""
+        rules, errors = parse_contributing(EMPTY_BACKTICK_PAIR)
+        self.assertGreater(len(errors), 0, "expected at least one error for empty backtick pair")
+        # The rule must NOT be added because enforced_by is empty.
+        self.assertEqual(rules, [])
+        # At least one error must mention the problem (empty token or empty value).
+        messages = " ".join(e.message for e in errors)
+        self.assertTrue(
+            "empty" in messages.lower(),
+            f"expected 'empty' in error messages, got: {messages}",
+        )
+
+    def test_sparse_comma_reports_error_and_keeps_valid_tokens(self):
+        """A sparse comma ( `a.py`, , `b.py` ) must raise an error for the
+        empty middle slot and must NOT silently store "" in enforced_by."""
+        rules, errors = parse_contributing(SPARSE_COMMA_ENFORCED_BY)
+        self.assertGreater(len(errors), 0, "expected at least one error for sparse comma")
+        # Valid tokens should still be captured in the rule.
+        self.assertEqual(len(rules), 1)
+        self.assertNotIn("", rules[0].enforced_by)
+        self.assertEqual(sorted(rules[0].enforced_by), ["checks/a.py", "checks/b.py"])
+        # At least one error must flag the empty slot.
+        messages = " ".join(e.message for e in errors)
+        self.assertTrue(
+            "empty" in messages.lower(),
+            f"expected 'empty' in error messages, got: {messages}",
+        )
 
 
 if __name__ == "__main__":

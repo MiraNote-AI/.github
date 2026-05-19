@@ -7,7 +7,7 @@ violations in one pass.
 """
 from __future__ import annotations
 import re
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import List, Optional, Tuple
 
 
@@ -37,10 +37,25 @@ def _strip_backticks_and_space(token: str) -> str:
     return token.strip().strip("`").strip()
 
 
-def _split_enforced_by(value: str) -> List[str]:
+def _split_enforced_by(value: str) -> Tuple[List[str], List[str]]:
+    """Split and strip a comma-separated enforced-by value.
+
+    Design choice: emit an error string for every empty slot (option b).
+    A sparse comma such as ``a.py``, , ``b.py`` is a typo — silently dropping
+    it would hide the mistake from the author. Callers receive the filtered
+    list of valid tokens *and* a list of error messages for the empty slots.
+    """
     if not value.strip():
-        return []
-    return [_strip_backticks_and_space(p) for p in value.split(",")]
+        return [], []
+    tokens = [_strip_backticks_and_space(p) for p in value.split(",")]
+    valid: List[str] = []
+    slot_errors: List[str] = []
+    for i, tok in enumerate(tokens):
+        if tok == "":
+            slot_errors.append(f"empty token at slot {i} in `**Enforced by:**` value")
+        else:
+            valid.append(tok)
+    return valid, slot_errors
 
 
 def parse_contributing(text: str) -> Tuple[List[Rule], List[ParseError]]:
@@ -63,7 +78,7 @@ def parse_contributing(text: str) -> Tuple[List[Rule], List[ParseError]]:
 
     # Step 2: split the rules section into per-rule chunks by ### Rule N: headings
     lines = body.split("\n")
-    chunks: List[Tuple[int, str, str, List[str]]] = []  # (line_no, raw_heading, title_or_id, body_lines)
+    chunks: List[Tuple[int, str, str, List[str]]] = []  # (line_no, raw_heading, title, body_lines)
     current_heading: Optional[Tuple[int, str, int, str]] = None  # (line_no, raw, id_num, title)
     current_body: List[str] = []
 
@@ -133,7 +148,14 @@ def parse_contributing(text: str) -> Tuple[List[Rule], List[ParseError]]:
             )
             enforced_by: List[str] = []
         else:
-            enforced_by = _split_enforced_by(enforced_matches[0][1])
+            enforced_by, slot_errors = _split_enforced_by(enforced_matches[0][1])
+            for msg in slot_errors:
+                errors.append(
+                    ParseError(
+                        f"Rule {rule_id}: {msg}",
+                        line=line_no,
+                    )
+                )
             if not enforced_by:
                 errors.append(
                     ParseError(

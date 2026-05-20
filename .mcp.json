@@ -1,0 +1,9 @@
+{
+  "_comment": "Claude Code MCP server config for MiraNote-AI. The miranote-discord server exposes 11 Discord tools (discord_send_message, discord_send_dm, discord_list_channels, etc.) to Claude Code via the local mirabot bot token. Requires: (1) mirabot repo cloned as a sibling of this repo at ../mirabot/, (2) mirabot/.env populated with DISCORD_BOT_TOKEN (gitignored), (3) npm install run inside ../mirabot/mcp-server/. After this config lands, restart Claude Code to pick up the MCP server.",
+  "mcpServers": {
+    "miranote-discord": {
+      "command": "node",
+      "args": ["/Users/mengjia/MiraNote/mirabot/mcp-server/src/server.js"]
+    }
+  }
+}

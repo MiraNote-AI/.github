@@ -42,6 +42,7 @@ jobs:
           rsync -a --delete source/docs/ai/ target/docs/ai/
           mkdir -p target/.github/workflows
           cp source/templates/target-workflow.yml target/.github/workflows/checks.yml
+          cp source/templates/pr-discord-announce.yml target/.github/workflows/pr-discord-announce.yml
           # Sync skills/ -> .claude/skills/ so each subrepo gets the team's
           # Claude Code skills. Created on first sync if not present.
           if [ -d source/skills ]; then

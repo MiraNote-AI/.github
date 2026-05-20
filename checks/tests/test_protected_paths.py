@@ -31,6 +31,12 @@ class TestPathsIntersecting(unittest.TestCase):
     def test_checks_workflow_match(self):
         self.assertEqual(paths_intersecting([".github/workflows/checks.yml"]), [".github/workflows/checks.yml"])
 
+    def test_announce_workflow_match(self):
+        self.assertEqual(
+            paths_intersecting([".github/workflows/pr-discord-announce.yml"]),
+            [".github/workflows/pr-discord-announce.yml"],
+        )
+
     def test_other_workflow_does_NOT_match(self):
         self.assertEqual(paths_intersecting([".github/workflows/release.yml"]), [])
 

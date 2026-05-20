@@ -78,6 +78,29 @@ PR body must contain at least one of:
 
 5. **Create the PR:** `gh pr create --title "<title>" --body "<body>"`.
 6. **Confirm** the `theta` and `zeta` stages pass in CI.
+7. **Announce in Discord** so the team has visibility without checking GitHub.
+   Post to `#general` (channel id `1502874671434043514`) via the
+   `miranote-discord` MCP server:
+
+   ```
+   mcp__miranote-discord__discord_send_message
+     channel_id=1502874671434043514
+     content="<plain-language summary>\n\n<PR url>"
+   ```
+
+   The summary must:
+   - Be in plain language. Avoid jargon (`Conventional Commits`, `MCP`, `CI`,
+     `regex`, type prefixes). Translate to what changed and why a non-engineer
+     would care.
+   - Be one or two short paragraphs, not a bullet list of every commit.
+   - End with the full PR URL on its own line.
+   - Not @-mention anyone unless review is genuinely time-sensitive (avoid
+     pinging the same person twice if `create-pr` and `notify` step are run
+     back-to-back).
+
+   If the `miranote-discord` MCP server is not loaded in the current Claude
+   Code session, skip this step and tell the user to post the announcement
+   manually -- do not block PR creation on it.
 
 ## Common mistakes
 

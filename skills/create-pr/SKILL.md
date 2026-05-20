@@ -78,29 +78,15 @@ PR body must contain at least one of:
 
 5. **Create the PR:** `gh pr create --title "<title>" --body "<body>"`.
 6. **Confirm** the `theta` and `zeta` stages pass in CI.
-7. **Announce in Discord** so the team has visibility without checking GitHub.
-   Post to `#general` (channel id `1502874671434043514`) via the
-   `miranote-discord` MCP server:
 
-   ```
-   mcp__miranote-discord__discord_send_message
-     channel_id=1502874671434043514
-     content="<plain-language summary>\n\n<PR url>"
-   ```
-
-   The summary must:
-   - Be in plain language. Avoid jargon (`Conventional Commits`, `MCP`, `CI`,
-     `regex`, type prefixes). Translate to what changed and why a non-engineer
-     would care.
-   - Be one or two short paragraphs, not a bullet list of every commit.
-   - End with the full PR URL on its own line.
-   - Not @-mention anyone unless review is genuinely time-sensitive (avoid
-     pinging the same person twice if `create-pr` and `notify` step are run
-     back-to-back).
-
-   If the `miranote-discord` MCP server is not loaded in the current Claude
-   Code session, skip this step and tell the user to post the announcement
-   manually -- do not block PR creation on it.
+A Discord announcement to `#general` is sent automatically by the
+`pr-discord-announce.yml` workflow on PR open, posting as the team bot
+(mirabot/LumaBot). **Do not** send team-facing announcements through your
+local `miranote-discord` MCP server -- that connection runs under a personal
+bot identity (Meng-Proxy), not the team bot, and using it for team comms
+mixes identities in the channel. The MCP server is for personal read-only
+investigation (looking up messages, finding members), not for posting on
+behalf of the team.
 
 ## Common mistakes
 

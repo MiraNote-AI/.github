@@ -14,3 +14,6 @@ Thumbs.db
 .idea/
 *.swp
 *~
+
+# User-local Claude Code MCP config (per-machine paths + tokens; do not commit)
+.mcp.json

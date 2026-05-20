@@ -122,6 +122,19 @@ class TestForbiddenContent(unittest.TestCase):
         errs = title_errors("feat: FIXME refactor module")
         self.assertTrue(any("Draft" in e for e in errs))
 
+    def test_lowercase_todo_word_passes(self):
+        # `todo` as a regular English word in a product/feature name must not
+        # be mistaken for a WIP marker.
+        self.assertEqual(title_errors("feat: add todo list management"), [])
+
+    def test_lowercase_draft_word_passes(self):
+        self.assertEqual(title_errors("feat(api): add draft saving"), [])
+
+    def test_lowercase_fixme_word_passes(self):
+        self.assertEqual(
+            title_errors("fix: improve fixme handling in parser"), []
+        )
+
     def test_empty_title_fails(self):
         errs = title_errors("")
         self.assertTrue(any("empty" in e.lower() for e in errs))

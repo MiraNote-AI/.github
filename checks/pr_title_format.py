@@ -29,7 +29,10 @@ _HEAD_RE = re.compile(
     r"^(?P<type>[a-z]+)(?:\((?P<scope>[^)]*)\))?(?P<bang>!)?:\s(?P<desc>.*)$"
 )
 _ISSUE_REF_RE = re.compile(r"#\d+")
-_WIP_RE = re.compile(r"\b(?:WIP|DRAFT|FIXME|TODO)\b", re.IGNORECASE)
+# Case-sensitive on purpose: only catch the uppercase marker form authors
+# use to flag draft work. Lowercase `todo`/`draft`/`fixme` are normal English
+# words that appear in legitimate titles like `feat: add todo list management`.
+_WIP_RE = re.compile(r"\b(?:WIP|DRAFT|FIXME|TODO)\b")
 
 # Past-tense / gerund verbs that violate the "imperative mood" convention.
 # Matched at the start of the description (after the prefix), case-insensitively.

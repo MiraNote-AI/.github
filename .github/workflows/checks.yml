@@ -74,6 +74,14 @@ jobs:
           PR_BRANCH: ${{ github.event.pull_request.head.ref }}
         run: python -m checks.pr_has_reference
 
+      - name: theta -- PR title format
+        if: ${{ !cancelled() && github.event_name == 'pull_request' }}
+        working-directory: tools
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          PR_BRANCH: ${{ github.event.pull_request.head.ref }}
+        run: python -m checks.pr_title_format
+
       - name: eta -- Protected paths
         if: ${{ !cancelled() && inputs.mode == 'target' && github.event_name == 'pull_request' }}
         working-directory: tools

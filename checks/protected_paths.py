@@ -26,6 +26,7 @@ PROTECTED_GLOBS: List[str] = [
     "CLAUDE.md",
     "CONTRIBUTING.md",
     "docs/ai/**",
+    ".claude/skills/**",
     ".github/workflows/checks.yml",
 ]
 

@@ -34,6 +34,16 @@ class TestPathsIntersecting(unittest.TestCase):
     def test_other_workflow_does_NOT_match(self):
         self.assertEqual(paths_intersecting([".github/workflows/release.yml"]), [])
 
+    def test_claude_skills_nested_match(self):
+        self.assertEqual(
+            paths_intersecting([".claude/skills/create-pr/SKILL.md"]),
+            [".claude/skills/create-pr/SKILL.md"],
+        )
+
+    def test_claude_settings_does_NOT_match(self):
+        # .claude/settings.json is per-user/per-repo, not synced from .github
+        self.assertEqual(paths_intersecting([".claude/settings.json"]), [])
+
     def test_mixed_changes_returns_only_protected(self):
         changes = ["src/x.ts", "CLAUDE.md", "README.md", "docs/ai/skills.md"]
         self.assertEqual(set(paths_intersecting(changes)), {"CLAUDE.md", "docs/ai/skills.md"})

@@ -32,6 +32,12 @@ the `sync-ai-docs.yml` workflow propagates changes to every code repo.
 
 Full text and enforcement details are in [CONTRIBUTING.md](CONTRIBUTING.md).
 
+## Post-day-0 rules
+
+8. **PR title format** -- Conventional Commits prefix (`feat`/`fix`/`ci`/...),
+   whitelisted scopes (`api`/`web`/`ios`/`bot`/`infra`), imperative mood,
+   no `#N` / `WIP`/`TODO` markers, <= 72 chars.
+
 ## Quick local commands
 
 ```bash

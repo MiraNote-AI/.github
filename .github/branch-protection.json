@@ -1,10 +1,10 @@
 {
-  "_comment": "Branch protection config applied to main of every MiraNote-AI repo. Hardened from the dasgpt baseline: (1) `restrictions` empty-allowlist blocks direct push to main for non-admins; (2) `required_status_checks` enforces `checks / checks` (the reusable workflow status name, same string in both .github self-check and target stubs) -- a PR with a red check cannot merge. `enforce_admins: false` retains the ability for owners to use `gh pr merge --admin` in true emergencies, but the status-check gate still blocks them from merging a red PR via that route too. `strict: false` does NOT force PRs to be rebased onto latest main before merge (low friction for small teams).",
+  "_comment": "Branch protection config applied to main of every MiraNote-AI repo. Fully hardened: (1) `restrictions` empty-allowlist blocks direct push to main; (2) `required_status_checks` enforces `checks / checks` -- a PR with a red check cannot merge; (3) `enforce_admins: true` removes owner bypass -- the `--admin` flag is rejected by GitHub, so every PR truly needs an approving reviewer (a different human from the author, since GitHub disallows self-approval). For emergencies, temporarily set `enforce_admins: false` and rerun this script; restore after.",
   "required_status_checks": {
     "strict": false,
     "contexts": ["checks / checks"]
   },
-  "enforce_admins": false,
+  "enforce_admins": true,
   "required_pull_request_reviews": {
     "dismiss_stale_reviews": true,
     "require_code_owner_reviews": false,

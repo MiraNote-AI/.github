@@ -1,0 +1,46 @@
+# MiraNote-AI/.github's own copy of the announce workflow, kept in lockstep
+# with templates/pr-discord-announce.yml (which is what gets synced to the
+# four code repos by sync-ai-docs.yml). See that template for rationale.
+
+name: Announce PR in Discord
+
+on:
+  pull_request:
+    types: [opened]
+
+jobs:
+  announce:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Post to #general via mirabot
+        env:
+          BOT_TOKEN: ${{ secrets.MIRABOT_DISCORD_TOKEN }}
+          CHANNEL_ID: "1502874671434043514"
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          PR_AUTHOR: ${{ github.event.pull_request.user.login }}
+          REPO_NAME: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          if [ -z "${BOT_TOKEN:-}" ]; then
+            echo "::warning::MIRABOT_DISCORD_TOKEN is not set; skipping announce."
+            exit 0
+          fi
+          payload=$(jq -n \
+            --arg t "$PR_TITLE" \
+            --arg u "$PR_URL" \
+            --arg a "$PR_AUTHOR" \
+            --arg r "$REPO_NAME" \
+            '{content: "New PR in **\($r)** by **\($a)**:\n**\($t)**\n\($u)"}')
+          http_code=$(curl -sS -o /tmp/discord-resp -w "%{http_code}" \
+            -X POST "https://discord.com/api/v10/channels/${CHANNEL_ID}/messages" \
+            -H "Authorization: Bot ${BOT_TOKEN}" \
+            -H "Content-Type: application/json" \
+            -d "$payload")
+          if [ "$http_code" -ge 200 ] && [ "$http_code" -lt 300 ]; then
+            echo "Discord accepted message (HTTP $http_code)."
+          else
+            echo "::warning::Discord rejected message (HTTP $http_code). Response:"
+            cat /tmp/discord-resp
+            exit 0  # warn but do not fail the PR
+          fi

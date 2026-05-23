@@ -47,6 +47,12 @@ ALLOWLIST_PATTERNS: List[str] = [
     # allowlisted — they must stay clean.
     "docs/plans/*.md",
     "docs/specs/*.md",
+    # Localized runtime data: LLM prompts under any `prompts/` directory
+    # often need CJK content (e.g., few-shot examples for a Chinese model).
+    # The directory name is the contract; if a file is not actually loaded
+    # as a prompt, do not put it under `prompts/`.
+    "**/prompts/*.txt",
+    "**/prompts/*.md",
 ]
 
 

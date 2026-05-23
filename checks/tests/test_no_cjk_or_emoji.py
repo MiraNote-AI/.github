@@ -131,6 +131,34 @@ class TestValidate(unittest.TestCase):
         for rel in allowed_rels:
             self.assertFalse(any(rel in e for e in errors), rel)
 
+    def test_binary_audio_extensions_allowlisted(self):
+        # **/*.m4a, mp3, wav, etc. are allowlisted so committed audio
+        # fixtures (e.g. POC demo clips) don't trip beta on U+FFFD noise.
+        # Stage a 16-byte blob with the AAC/m4a magic so it looks plausible
+        # but decodes to U+FFFD when read as UTF-8.
+        audio_rels = [
+            "poc/voice-to-text/demo_data/clip.m4a",
+            "fixtures/sample.mp3",
+            "tests/data/snippet.wav",
+            "examples/voice.flac",
+            "examples/voice.ogg",
+            "examples/voice.opus",
+            "examples/voice.webm",
+        ]
+        for rel in audio_rels:
+            p = self.tmp / rel
+            p.parent.mkdir(parents=True, exist_ok=True)
+            p.write_bytes(b"\x00\x00\x00\x20ftypM4A " + bytes(range(8)))
+            subprocess.run(["git", "add", rel], cwd=self.tmp, check=True)
+        # A non-audio binary should STILL be flagged (the "binary committed
+        # as text" guard from spec 5.3 is preserved).
+        (self.tmp / "stray.bin").write_bytes(b"\x89PNG\r\n\x1a\n\x00\xff\xfe")
+        subprocess.run(["git", "add", "stray.bin"], cwd=self.tmp, check=True)
+        errors = validate(self.tmp)
+        self.assertTrue(any("stray.bin" in e for e in errors))
+        for rel in audio_rels:
+            self.assertFalse(any(rel in e for e in errors), rel)
+
     def test_main_returns_2_when_not_a_git_repo(self):
         non_git = pathlib.Path(tempfile.mkdtemp())  # not a git repo
         rc = main([str(non_git)])

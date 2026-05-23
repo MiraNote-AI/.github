@@ -53,6 +53,18 @@ ALLOWLIST_PATTERNS: List[str] = [
     # as a prompt, do not put it under `prompts/`.
     "**/prompts/*.txt",
     "**/prompts/*.md",
+    # Binary audio fixtures used as test data (e.g. POC demo clips).
+    # They decode to U+FFFD noise with errors="replace" and contain no
+    # real text -- there is no value in scanning them for CJK. The
+    # "binary mistakenly committed as text" guard is preserved for any
+    # extension not listed here.
+    "**/*.m4a",
+    "**/*.mp3",
+    "**/*.wav",
+    "**/*.flac",
+    "**/*.ogg",
+    "**/*.opus",
+    "**/*.webm",
 ]
 
 

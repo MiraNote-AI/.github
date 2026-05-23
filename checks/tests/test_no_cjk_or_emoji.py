@@ -111,6 +111,26 @@ class TestValidate(unittest.TestCase):
         self.assertTrue(any("src.py" in e for e in errors))
         self.assertFalse(any("docs/plans/x.md" in e for e in errors))
 
+    def test_prompts_dir_allowlisted_at_any_depth(self):
+        # **/prompts/*.{txt,md} is allowlisted so localized LLM prompts
+        # (which often contain CJK few-shot examples) can be committed.
+        allowed_rels = [
+            "app/prompts/correction.txt",
+            "poc/voice-to-text/prompts/correction.txt",
+            "deep/a/b/prompts/x.md",
+        ]
+        for rel in allowed_rels:
+            p = self.tmp / rel
+            p.parent.mkdir(parents=True, exist_ok=True)
+            p.write_text("\u4e2d\u6587 prompt body\n")
+            subprocess.run(["git", "add", rel], cwd=self.tmp, check=True)
+        # Non-prompts file with CJK must still be flagged.
+        self._write_and_stage("src.py", "x = '\u4e2d'\n")
+        errors = validate(self.tmp)
+        self.assertTrue(any("src.py" in e for e in errors))
+        for rel in allowed_rels:
+            self.assertFalse(any(rel in e for e in errors), rel)
+
     def test_main_returns_2_when_not_a_git_repo(self):
         non_git = pathlib.Path(tempfile.mkdtemp())  # not a git repo
         rc = main([str(non_git)])

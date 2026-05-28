@@ -159,6 +159,92 @@ class TestValidate(unittest.TestCase):
         for rel in audio_rels:
             self.assertFalse(any(rel in e for e in errors), rel)
 
+    def test_static_ui_files_allowlisted(self):
+        # Bilingual UI artifacts under any static/ dir can carry localized
+        # labels / placeholders.
+        ui_rels = [
+            "poc/text-clean-expand/static/index.html",
+            "app/static/main.css",
+            "app/static/app.js",
+            "examples/static/logo.svg",
+            "deep/a/static/page.html",
+        ]
+        for rel in ui_rels:
+            p = self.tmp / rel
+            p.parent.mkdir(parents=True, exist_ok=True)
+            p.write_text("<p>\u4e2d\u6587 hint</p>\n")
+            subprocess.run(["git", "add", rel], cwd=self.tmp, check=True)
+        # Non-static .html with CJK must still be flagged.
+        self._write_and_stage("public.html", "<p>\u4e2d\u6587</p>\n")
+        errors = validate(self.tmp)
+        self.assertTrue(any("public.html" in e for e in errors))
+        for rel in ui_rels:
+            self.assertFalse(any(rel in e for e in errors), rel)
+
+    def test_demo_data_dir_allowlisted_text_too(self):
+        # demo_data/ already covers binary audio (previous test); confirm
+        # text files in the same dir are also allowlisted -- sample inputs,
+        # README excerpts, etc.
+        demo_rels = [
+            "poc/text-clean-expand/demo_data/sample.txt",
+            "poc/voice-to-text/demo_data/transcript.txt",
+            "fixtures/demo_data/inputs.json",
+        ]
+        for rel in demo_rels:
+            p = self.tmp / rel
+            p.parent.mkdir(parents=True, exist_ok=True)
+            p.write_text("\u4eca\u5929\u5f00\u4f1a sample input\n")
+            subprocess.run(["git", "add", rel], cwd=self.tmp, check=True)
+        # A txt file outside demo_data must still be flagged.
+        self._write_and_stage("notes.txt", "\u4eca\u5929\n")
+        errors = validate(self.tmp)
+        self.assertTrue(any("notes.txt" in e for e in errors))
+        for rel in demo_rels:
+            self.assertFalse(any(rel in e for e in errors), rel)
+
+    def test_poc_readme_allowlisted_but_root_and_docs_ai_strict(self):
+        # POC READMEs may include native-language curl examples.
+        (self.tmp / "poc" / "text-clean-expand").mkdir(parents=True)
+        (self.tmp / "poc" / "text-clean-expand" / "README.md").write_text(
+            "# POC\n\n`-d '{\"text\": \"\u4eca\u5929\u5f00\u4f1a\"}'`\n"
+        )
+        subprocess.run(
+            ["git", "add", "poc/text-clean-expand/README.md"],
+            cwd=self.tmp, check=True,
+        )
+        # Nested poc/ should also work.
+        (self.tmp / "apps" / "poc" / "x").mkdir(parents=True)
+        (self.tmp / "apps" / "poc" / "x" / "README.md").write_text("\u4e2d\n")
+        subprocess.run(
+            ["git", "add", "apps/poc/x/README.md"], cwd=self.tmp, check=True,
+        )
+        # But root README and docs/ai/README must STAY strict.
+        self._write_and_stage("README.md", "\u4e2d\n")
+        (self.tmp / "docs" / "ai").mkdir(parents=True)
+        (self.tmp / "docs" / "ai" / "README.md").write_text("\u4e2d\n")
+        subprocess.run(
+            ["git", "add", "docs/ai/README.md"], cwd=self.tmp, check=True,
+        )
+        errors = validate(self.tmp)
+        # Allowlisted: NOT flagged
+        self.assertFalse(any("poc/text-clean-expand/README.md" in e for e in errors))
+        self.assertFalse(any("apps/poc/x/README.md" in e for e in errors))
+        # Strict: STILL flagged
+        self.assertTrue(any(e.startswith("README.md:") for e in errors))
+        self.assertTrue(any("docs/ai/README.md" in e for e in errors))
+
+    def test_poc_python_source_still_strict(self):
+        # POC code is not exempt -- IME residue in .py is still a violation
+        # even under poc/. This protects against inline-prompt-in-source
+        # anti-pattern; the right place for CJK prompts is prompts/.
+        (self.tmp / "poc" / "x").mkdir(parents=True)
+        (self.tmp / "poc" / "x" / "main.py").write_text("# \u4e2d\n")
+        subprocess.run(
+            ["git", "add", "poc/x/main.py"], cwd=self.tmp, check=True,
+        )
+        errors = validate(self.tmp)
+        self.assertTrue(any("poc/x/main.py" in e for e in errors))
+
     def test_main_returns_2_when_not_a_git_repo(self):
         non_git = pathlib.Path(tempfile.mkdtemp())  # not a git repo
         rc = main([str(non_git)])

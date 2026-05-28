@@ -65,6 +65,22 @@ ALLOWLIST_PATTERNS: List[str] = [
     "**/*.ogg",
     "**/*.opus",
     "**/*.webm",
+    # Content for a bilingual product. UI files under any `static/` directory
+    # legitimately need localized labels / placeholders / SVG text. Demo data
+    # under any `demo_data/` directory is sample input by definition.
+    # Source code (.py/.ts/.js outside static/, config files, build scripts,
+    # CLAUDE.md, docs/ai/, top-level README/CONTRIBUTING) all stay strict --
+    # the original "no IME residue in code" rationale still applies there.
+    "**/static/*.html",
+    "**/static/*.css",
+    "**/static/*.js",
+    "**/static/*.svg",
+    "**/demo_data/*",
+    # POC READMEs may include native-language curl examples / sample inputs
+    # so users can paste a representative payload. Top-level README and
+    # docs/ai/README.md remain strict.
+    "poc/*/README.md",
+    "**/poc/*/README.md",
 ]
 
 

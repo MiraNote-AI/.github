@@ -233,6 +233,42 @@ class TestValidate(unittest.TestCase):
         self.assertTrue(any(e.startswith("README.md:") for e in errors))
         self.assertTrue(any("docs/ai/README.md" in e for e in errors))
 
+    def test_corpus_json_with_cjk_is_allowlisted(self):
+        # poc/*/corpus/*.json files are allowed to contain CJK characters
+        # for bilingual quote / poetry corpora used in RAG POCs.
+        (self.tmp / "poc" / "retrieval" / "corpus").mkdir(parents=True)
+        (self.tmp / "poc" / "retrieval" / "corpus" / "quotes_zh.json").write_text(
+            '[{"text": "\u5c71\u91cd\u6c34\u590d", "author": "\u9646\u6e38"}]',
+            encoding="utf-8",
+        )
+        subprocess.run(
+            ["git", "add", "poc/retrieval/corpus/quotes_zh.json"],
+            cwd=self.tmp, check=True,
+        )
+        # Non-corpus file with CJK must still be flagged.
+        self._write_and_stage("src.py", "x = '\u4e2d'\n")
+        errors = validate(self.tmp)
+        self.assertTrue(any("src.py" in e for e in errors))
+        self.assertFalse(any("corpus/quotes_zh.json" in e for e in errors))
+
+    def test_corpus_md_with_cjk_is_allowlisted(self):
+        # poc/*/corpus/*.md files (e.g. README, source docs) are allowed
+        # to contain CJK characters for corpus documentation and citations.
+        (self.tmp / "poc" / "retrieval" / "corpus").mkdir(parents=True)
+        (self.tmp / "poc" / "retrieval" / "corpus" / "README.md").write_text(
+            "Corpus sources: \u5168\u5510\u8bd7 (Complete Poems of the Tang Dynasty)",
+            encoding="utf-8",
+        )
+        subprocess.run(
+            ["git", "add", "poc/retrieval/corpus/README.md"],
+            cwd=self.tmp, check=True,
+        )
+        # Non-corpus file with CJK must still be flagged.
+        self._write_and_stage("notes.md", "\u4e2d\n")
+        errors = validate(self.tmp)
+        self.assertTrue(any("notes.md" in e for e in errors))
+        self.assertFalse(any("corpus/README.md" in e for e in errors))
+
     def test_poc_python_source_still_strict(self):
         # POC code is not exempt -- IME residue in .py is still a violation
         # even under poc/. This protects against inline-prompt-in-source

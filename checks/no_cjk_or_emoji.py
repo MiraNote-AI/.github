@@ -76,6 +76,11 @@ ALLOWLIST_PATTERNS: List[str] = [
     "**/static/*.js",
     "**/static/*.svg",
     "**/demo_data/*",
+    # Curated content datasets for retrieval / RAG POCs. Same rationale
+    # as demo_data: this is data, not source code, and the CJK content
+    # is the whole point (bilingual quotes / poetry).
+    "poc/*/corpus/*.json",
+    "poc/*/corpus/*.md",
     # POC READMEs may include native-language curl examples / sample inputs
     # so users can paste a representative payload. Top-level README and
     # docs/ai/README.md remain strict.

@@ -86,6 +86,14 @@ ALLOWLIST_PATTERNS: List[str] = [
     # docs/ai/README.md remain strict.
     "poc/*/README.md",
     "**/poc/*/README.md",
+    # Test files. Test *inputs* frequently need real target-language content
+    # (e.g. Chinese prompts exercising a bilingual model, or bilingual
+    # fixtures), and test code is not a user-facing product surface. Matches
+    # Python's unittest/pytest naming (test_*.py, *_test.py) at any depth.
+    # Non-test source (main.py, handlers, config) stays strict, so IME residue
+    # in production code is still caught.
+    "**/test_*.py",
+    "**/*_test.py",
 ]
 
 

@@ -281,6 +281,27 @@ class TestValidate(unittest.TestCase):
         errors = validate(self.tmp)
         self.assertTrue(any("poc/x/main.py" in e for e in errors))
 
+    def test_python_test_files_allowlisted(self):
+        # Test files (test_*.py / *_test.py, at any depth) may carry CJK: test
+        # *inputs* often need real target-language content (e.g. Chinese prompts
+        # exercising a bilingual model). Non-test .py source stays strict.
+        test_rels = [
+            "poc/image-generation/test_api.py",   # manual test catalog
+            "checks/tests/test_thing.py",         # nested unit test
+            "app/services/handlers_test.py",      # *_test.py convention
+        ]
+        for rel in test_rels:
+            p = self.tmp / rel
+            p.parent.mkdir(parents=True, exist_ok=True)
+            p.write_text("prompt = '" + chr(0x4e2d) + chr(0x6587) + "'\n")
+            subprocess.run(["git", "add", rel], cwd=self.tmp, check=True)
+        # A non-test .py with the same CJK must STILL be flagged.
+        self._write_and_stage("poc/image-generation/main.py", "x = '" + chr(0x4e2d) + "'\n")
+        errors = validate(self.tmp)
+        self.assertTrue(any("poc/image-generation/main.py" in e for e in errors))
+        for rel in test_rels:
+            self.assertFalse(any(rel in e for e in errors), rel)
+
     def test_main_returns_2_when_not_a_git_repo(self):
         non_git = pathlib.Path(tempfile.mkdtemp())  # not a git repo
         rc = main([str(non_git)])

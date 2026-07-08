@@ -159,6 +159,25 @@ class TestValidate(unittest.TestCase):
         for rel in audio_rels:
             self.assertFalse(any(rel in e for e in errors), rel)
 
+    def test_binary_font_extensions_allowlisted(self):
+        # **/*.ttf and **/*.otf are allowlisted so bundled app fonts (e.g.
+        # the iOS app ships Fraunces.ttf) don't trip beta on U+FFFD noise.
+        # Same class as the audio group: binary data, no reviewable text.
+        font_rels = [
+            "App/Resources/Fonts/Fraunces.ttf",
+            "assets/fonts/Display.otf",
+        ]
+        for rel in font_rels:
+            p = self.tmp / rel
+            p.parent.mkdir(parents=True, exist_ok=True)
+            # TrueType magic (00 01 00 00) followed by bytes that decode to
+            # U+FFFD when read as UTF-8.
+            p.write_bytes(b"\x00\x01\x00\x00\x00\x0f\x00\x80" + bytes([0xC3, 0x28, 0xA0, 0xA1]))
+            subprocess.run(["git", "add", rel], cwd=self.tmp, check=True)
+        errors = validate(self.tmp)
+        for rel in font_rels:
+            self.assertFalse(any(rel in e for e in errors), rel)
+
     def test_static_ui_files_allowlisted(self):
         # Bilingual UI artifacts under any static/ dir can carry localized
         # labels / placeholders.

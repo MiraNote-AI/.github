@@ -65,6 +65,11 @@ ALLOWLIST_PATTERNS: List[str] = [
     "**/*.ogg",
     "**/*.opus",
     "**/*.webm",
+    # Bundled font binaries (e.g. the iOS app ships Fraunces). Same
+    # rationale as the audio group above: binary data decodes to U+FFFD
+    # noise and carries no reviewable text.
+    "**/*.ttf",
+    "**/*.otf",
     # Content for a bilingual product. UI files under any `static/` directory
     # legitimately need localized labels / placeholders / SVG text. Demo data
     # under any `demo_data/` directory is sample input by definition.

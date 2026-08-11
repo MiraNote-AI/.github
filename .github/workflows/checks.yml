@@ -82,6 +82,14 @@ jobs:
           PR_BRANCH: ${{ github.event.pull_request.head.ref }}
         run: python -m checks.pr_title_format
 
+      - name: iota -- PR base branch
+        if: ${{ !cancelled() && github.event_name == 'pull_request' }}
+        working-directory: tools
+        env:
+          PR_BASE: ${{ github.event.pull_request.base.ref }}
+          PR_HEAD: ${{ github.event.pull_request.head.ref }}
+        run: python -m checks.pr_base_branch
+
       - name: eta -- Protected paths
         if: ${{ !cancelled() && inputs.mode == 'target' && github.event_name == 'pull_request' }}
         working-directory: tools

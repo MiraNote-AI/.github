@@ -70,6 +70,17 @@ ALLOWLIST_PATTERNS: List[str] = [
     # noise and carries no reviewable text.
     "**/*.ttf",
     "**/*.otf",
+    # Image and PDF binaries (app icons, bundled stickers, design handoffs).
+    # Same class again, with one difference: image bytes can form VALID
+    # UTF-8 for a CJK code point (an app icon failed on U+6623), so these
+    # fail as "CJK", not as U+FFFD -- skipping them is the only fix.
+    "**/*.png",
+    "**/*.jpg",
+    "**/*.jpeg",
+    "**/*.webp",
+    "**/*.heic",
+    "**/*.gif",
+    "**/*.pdf",
     # Content for a bilingual product. UI files under any `static/` directory
     # legitimately need localized labels / placeholders / SVG text. Demo data
     # under any `demo_data/` directory is sample input by definition.

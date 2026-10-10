@@ -178,6 +178,29 @@ class TestValidate(unittest.TestCase):
         for rel in font_rels:
             self.assertFalse(any(rel in e for e in errors), rel)
 
+    def test_binary_image_extensions_allowlisted(self):
+        # **/*.png etc. are allowlisted so an app icon or bundled sticker can
+        # be committed. Image bytes can happen to form VALID UTF-8 for a CJK
+        # code point -- the real icon failed on U+6623 (E6 98 A3), not on
+        # U+FFFD -- so the fixture carries exactly that sequence.
+        image_rels = [
+            "App/Resources/Assets.xcassets/AppIcon.appiconset/icon-1024.png",
+            "assets/photo.jpg",
+            "assets/photo.jpeg",
+            "assets/sticker.webp",
+            "assets/capture.heic",
+            "assets/animation.gif",
+            "docs/handoff.pdf",
+        ]
+        for rel in image_rels:
+            p = self.tmp / rel
+            p.parent.mkdir(parents=True, exist_ok=True)
+            p.write_bytes(b"\x89PNG\r\n\x1a\n" + bytes([0xE6, 0x98, 0xA3]))
+            subprocess.run(["git", "add", rel], cwd=self.tmp, check=True)
+        errors = validate(self.tmp)
+        for rel in image_rels:
+            self.assertFalse(any(rel in e for e in errors), rel)
+
     def test_static_ui_files_allowlisted(self):
         # Bilingual UI artifacts under any static/ dir can carry localized
         # labels / placeholders.

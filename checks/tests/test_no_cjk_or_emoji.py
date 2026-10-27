@@ -344,6 +344,55 @@ class TestValidate(unittest.TestCase):
         for rel in test_rels:
             self.assertFalse(any(rel in e for e in errors), rel)
 
+    def _stage(self, rel: str, text: str) -> None:
+        p = self.tmp / rel
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_text(text, encoding="utf-8")
+        subprocess.run(["git", "add", rel], cwd=self.tmp, check=True)
+
+    def test_cjk_allowed_in_localization_resources(self):
+        # zh-CN localization: CJK (incl. fullwidth punctuation) is allowed in
+        # String Catalogs and in .strings / .stringsdict inside a .lproj dir.
+        zh = chr(0x8BBE) + chr(0x7F6E) + chr(0xFF0C) + chr(0x3002)
+        allowed_rels = [
+            "MiraNote/Resources/Localizable.xcstrings",
+            "MiraNote/zh-Hans.lproj/Localizable.strings",
+            "MiraNote/zh-Hans.lproj/Localizable.stringsdict",
+            "MiraNote/zh.lproj/InfoPlist.strings",
+        ]
+        for rel in allowed_rels:
+            self._stage(rel, '"settings" = "' + zh + '";\n')
+        errors = validate(self.tmp)
+        for rel in allowed_rels:
+            self.assertFalse(any(rel in e for e in errors), rel)
+
+    def test_cjk_still_rejected_outside_localization_resources(self):
+        zh = chr(0x4E2D)
+        strict_rels = [
+            "MiraNote/Views/SettingsView.swift",
+            "MiraNote/Resources/Localizable.strings",  # .strings outside .lproj
+            "MiraNote/zh-Hans.lproj/sub/Localizable.strings",  # not direct child
+            "MiraNote/zh-Hans.lproj/Notes.md",  # wrong extension
+        ]
+        for rel in strict_rels:
+            self._stage(rel, "x = '" + zh + "'\n")
+        errors = validate(self.tmp)
+        for rel in strict_rels:
+            self.assertTrue(any(e.startswith(rel + ":") for e in errors), rel)
+
+    def test_emoji_still_rejected_in_localization_resources(self):
+        rels = [
+            "MiraNote/Localizable.xcstrings",
+            "MiraNote/zh-Hans.lproj/Localizable.strings",
+        ]
+        for rel in rels:
+            self._stage(rel, '"hi" = "' + chr(0x4E2D) + chr(0x1F600) + '";\n')
+        errors = validate(self.tmp)
+        for rel in rels:
+            flagged = [e for e in errors if e.startswith(rel + ":")]
+            self.assertEqual(len(flagged), 1, rel)
+            self.assertIn("U+1F600", flagged[0])
+
     def test_main_returns_2_when_not_a_git_repo(self):
         non_git = pathlib.Path(tempfile.mkdtemp())  # not a git repo
         rc = main([str(non_git)])

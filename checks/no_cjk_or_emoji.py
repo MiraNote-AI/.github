@@ -112,6 +112,26 @@ ALLOWLIST_PATTERNS: List[str] = [
     "**/*_test.py",
 ]
 
+# App localization resources: CJK is allowed here, but emoji and U+FFFD are
+# still forbidden. Approved 2026-10-27 for the iOS Simplified Chinese
+# (zh-CN) localization. Kept narrow: a String Catalog at any depth, or a
+# .strings / .stringsdict file directly inside a `<lang>.lproj` directory.
+# A .strings file anywhere else, and all Swift source, stays strict.
+CJK_ALLOWED_PATTERNS: List[str] = [
+    "*.xcstrings",
+    "*.lproj/*.strings",
+    "*.lproj/*.stringsdict",
+]
+
+CJK_BLOCKS = {
+    "Hiragana",
+    "Katakana",
+    "CJK Unified Ideographs",
+    "CJK Unified Ideographs Extension A",
+    "CJK Symbols and Punctuation",
+    "Halfwidth and Fullwidth Forms",
+}
+
 
 def _classify(cp: int) -> str:
     for lo, hi, name in FORBIDDEN_RANGES:
@@ -145,6 +165,13 @@ def _is_allowlisted(rel_path: str) -> bool:
     return any(fnmatch.fnmatchcase(rel_path, pat) for pat in ALLOWLIST_PATTERNS)
 
 
+def _cjk_allowed(rel_path: str) -> bool:
+    # Match on the last two path components so the patterns stay anchored to
+    # the file and its parent directory (fnmatch's `*` also matches `/`).
+    tail = "/".join(rel_path.split("/")[-2:])
+    return any(fnmatch.fnmatchcase(tail, pat) for pat in CJK_ALLOWED_PATTERNS)
+
+
 def validate(repo_root: pathlib.Path) -> List[str]:
     """Return list of error messages. Empty list == pass."""
     errors: List[str] = []
@@ -159,7 +186,10 @@ def validate(repo_root: pathlib.Path) -> List[str]:
         except OSError as e:
             errors.append(f"{rel}: cannot read ({e})")
             continue
+        cjk_ok = _cjk_allowed(rel)
         for line, col, cp, block in scan_text(text):
+            if cjk_ok and block in CJK_BLOCKS:
+                continue
             errors.append(
                 f"{rel}:{line}:{col}: forbidden character U+{cp:04X} "
                 f"(block: {block})"

@@ -6,6 +6,10 @@ staged-but-not-committed files (or untracked-but-tracked-elsewhere files) slip
 through local checks and only fail in CI. DASGPT learned this the hard way
 (spec section 5.3, hands-on lesson 9.2).
 
+Exception: app localization files -- `*.xcstrings` anywhere, and `.strings`
+/ `.stringsdict` files directly inside a `<lang>.lproj` directory -- may hold
+CJK (they carry the translations); emoji stay forbidden there too.
+
 Uses hardcoded Unicode block ranges; Python stdlib does not expose the
 Emoji_Presentation property, and `re` does not support \\p{...}.
 """

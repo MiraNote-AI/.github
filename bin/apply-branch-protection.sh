@@ -35,17 +35,23 @@ if [[ ! -f "$CONFIG" ]]; then
 fi
 
 # Strip the human-readable _comment key before sending to the GitHub API.
-PAYLOAD="$(python3 -c "
+# dev drops the push restrictions: a restriction also limits who may merge,
+# and teammates merge their own approved PRs into dev. Only main keeps it.
+payload_for() {
+  python3 -c "
 import json, sys
 data = json.load(open('$CONFIG'))
 data.pop('_comment', None)
+if sys.argv[1] == 'dev':
+    data['restrictions'] = None
 sys.stdout.write(json.dumps(data))
-")"
+" "$1"
+}
 
 for repo in "${REPOS[@]}"; do
   for branch in main dev; do
     echo "=== MiraNote-AI/$repo ($branch) ==="
-    echo "$PAYLOAD" | gh api -X PUT \
+    payload_for "$branch" | gh api -X PUT \
       "repos/MiraNote-AI/$repo/branches/$branch/protection" \
       --input - > /dev/null
     echo "  protected"

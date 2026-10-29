@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# Apply branch protection (sub-project F, day-1) to main of every MiraNote-AI
-# repo. Idempotent: rerun any time the config in .github/branch-protection.json
-# changes.
+# Apply branch protection (sub-project F, day-1) to dev and main of every
+# MiraNote-AI repo. Idempotent: rerun any time the config in
+# .github/branch-protection.json changes.
 #
 # Prerequisites:
 #   - Phase 3 done (target repos have main branches)
@@ -13,17 +13,9 @@
 #   bin/apply-branch-protection.sh REPO ...  # applies only to listed repos
 #
 # Notes:
-#   - The PR template requires PRs to be reviewed by 1 approver, but
-#     enforce_admins is false, so the org owner can merge their own PRs
-#     after admin override when no second reviewer is available.
-#   - Required status checks are NOT in this config; see F-2 below.
-#
-# F-2 (post-Phase-5 hardening):
-#   After the first PR triggers `Checks` (target) or `Self-check` (.github),
-#   inspect the status-check name shown in the PR UI ("checks / <name>")
-#   and apply with `required_status_checks` populated. The exact context
-#   name depends on how GitHub renders reusable-workflow jobs; the safe
-#   path is to read the value from a real PR rather than guess.
+#   - Every PR needs 1 approver, but enforce_admins is false by design, so
+#     the org owner merges their own PRs without a second reviewer. See the
+#     _comment in the config for exactly what admins are and are not held to.
 
 set -euo pipefail
 
@@ -51,11 +43,13 @@ sys.stdout.write(json.dumps(data))
 ")"
 
 for repo in "${REPOS[@]}"; do
-  echo "=== MiraNote-AI/$repo ==="
-  echo "$PAYLOAD" | gh api -X PUT \
-    "repos/MiraNote-AI/$repo/branches/main/protection" \
-    --input - > /dev/null
-  echo "  protected"
+  for branch in main dev; do
+    echo "=== MiraNote-AI/$repo ($branch) ==="
+    echo "$PAYLOAD" | gh api -X PUT \
+      "repos/MiraNote-AI/$repo/branches/$branch/protection" \
+      --input - > /dev/null
+    echo "  protected"
+  done
 done
 
 echo "Done."

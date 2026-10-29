@@ -1,10 +1,10 @@
 {
-  "_comment": "Branch protection config applied to main of every MiraNote-AI repo. Fully hardened: (1) `restrictions` empty-allowlist blocks direct push to main; (2) `required_status_checks` enforces `checks / checks` -- a PR with a red check cannot merge; (3) `enforce_admins: true` removes owner bypass -- the `--admin` flag is rejected by GitHub, so every PR truly needs an approving reviewer (a different human from the author, since GitHub disallows self-approval). For emergencies, temporarily set `enforce_admins: false` and rerun this script; restore after.",
+  "_comment": "Branch protection config applied to dev and main of every MiraNote-AI repo by bin/apply-branch-protection.sh. (1) `restrictions` empty-allowlist blocks direct pushes; (2) `required_status_checks` requires `checks / checks` -- a PR with a red check cannot merge; (3) every PR needs one approving review from someone other than its author, and every review conversation must be resolved before merge; (4) `enforce_admins: false` is deliberate (owner decision, 2026-10-29): admins -- the org owner -- may merge their own PRs without a second reviewer, and are also not held to (2) or (3); everyone else is held to all three, so teammates' PRs still need the owner's approval.",
   "required_status_checks": {
     "strict": false,
     "contexts": ["checks / checks"]
   },
-  "enforce_admins": true,
+  "enforce_admins": false,
   "required_pull_request_reviews": {
     "dismiss_stale_reviews": true,
     "require_code_owner_reviews": false,
@@ -18,5 +18,5 @@
   "allow_force_pushes": false,
   "allow_deletions": false,
   "required_linear_history": false,
-  "required_conversation_resolution": false
+  "required_conversation_resolution": true
 }

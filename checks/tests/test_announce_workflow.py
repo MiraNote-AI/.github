@@ -130,6 +130,18 @@ class TestAnnounceStep(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn("::warning::", result.stdout)
 
+    def test_curl_gives_up_on_a_stalled_call(self):
+        # curl has no overall time limit of its own: on a connection that
+        # never answers it waits until the job's 6-hour default timeout.
+        # A timeout (curl exit 28, http_code 000) takes the warning path.
+        result, tmp = self._run()
+        self.assertEqual(result.returncode, 0, result.stderr)
+        argv = (tmp / "argv").read_text().splitlines()
+        self.assertIn("--max-time", argv)
+        result, _ = self._run(FAKE_HTTP_CODE="000", FAKE_CURL_EXIT="28")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("::warning::", result.stdout)
+
 
 if __name__ == "__main__":
     unittest.main()

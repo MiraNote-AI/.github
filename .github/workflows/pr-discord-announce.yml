@@ -38,7 +38,7 @@ jobs:
             '{content: "New PR in **\($r)** by **\($a)**:\n**\($t)**\n\($u)",
               allowed_mentions: {parse: []}}')
           resp="$RUNNER_TEMP/discord-resp"
-          http_code=$(curl -sS -o "$resp" -w "%{http_code}" \
+          http_code=$(curl -sS --max-time 30 -o "$resp" -w "%{http_code}" \
             -X POST "https://discord.com/api/v10/channels/${CHANNEL_ID}/messages" \
             -H "Authorization: Bot ${BOT_TOKEN}" \
             -H "Content-Type: application/json" \

@@ -1,0 +1,51 @@
+# .github/workflows/pr-discord-announce.yml -- this repo's own copy of
+# templates/pr-discord-announce.yml (the template is what gets synced to the
+# code repos). Same pattern as checks.yml + self-check.yml. Everything below
+# the header must match the template; see the template for rationale.
+
+name: Announce PR in Discord
+
+on:
+  pull_request:
+    types: [opened]
+
+permissions: {}
+
+jobs:
+  announce:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Post to #general as MiraBot
+        env:
+          BOT_TOKEN: ${{ secrets.MIRABOT_DISCORD_TOKEN }}
+          CHANNEL_ID: "1502874671434043514"
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          PR_AUTHOR: ${{ github.event.pull_request.user.login }}
+          REPO_NAME: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          if [ -z "${BOT_TOKEN:-}" ]; then
+            echo "::notice::MIRABOT_DISCORD_TOKEN is not available; skipping announce."
+            exit 0
+          fi
+          # allowed_mentions.parse=[] keeps a title like "@everyone" inert.
+          payload=$(jq -n \
+            --arg t "$PR_TITLE" \
+            --arg u "$PR_URL" \
+            --arg a "$PR_AUTHOR" \
+            --arg r "$REPO_NAME" \
+            '{content: "New PR in **\($r)** by **\($a)**:\n**\($t)**\n\($u)",
+              allowed_mentions: {parse: []}}')
+          resp="$RUNNER_TEMP/discord-resp"
+          http_code=$(curl -sS --max-time 30 -o "$resp" -w "%{http_code}" \
+            -X POST "https://discord.com/api/v10/channels/${CHANNEL_ID}/messages" \
+            -H "Authorization: Bot ${BOT_TOKEN}" \
+            -H "Content-Type: application/json" \
+            -d "$payload" || true)
+          if [ "$http_code" -ge 200 ] && [ "$http_code" -lt 300 ]; then
+            echo "Discord accepted the message (HTTP $http_code)."
+          else
+            echo "::warning::Discord rejected the message (HTTP $http_code)."
+            cat "$resp" || true
+          fi

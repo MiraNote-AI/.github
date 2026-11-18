@@ -126,5 +126,21 @@ class TestValidate(unittest.TestCase):
             self.assertEqual(rc, 2)
 
 
+class TestProtectedWorkflowsDocumented(unittest.TestCase):
+    """The lists people and agents read name every protected workflow."""
+
+    ROOT = pathlib.Path(__file__).resolve().parents[2]
+    DOCS = ("CLAUDE.md", "CONTRIBUTING.md", "skills/run-loop/SKILL.md")
+
+    def test_each_doc_names_each_protected_workflow(self):
+        workflows = [g for g in PROTECTED_GLOBS
+                     if g.startswith(".github/workflows/")]
+        self.assertTrue(workflows)
+        for doc in self.DOCS:
+            text = (self.ROOT / doc).read_text()
+            missing = [w for w in workflows if w not in text]
+            self.assertEqual(missing, [], f"{doc} omits {missing}")
+
+
 if __name__ == "__main__":
     unittest.main()
